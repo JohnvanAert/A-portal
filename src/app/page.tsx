@@ -4,49 +4,53 @@ import {
   Settings2, Users2, BarChart3, CloudLightning 
 } from "lucide-react";
 import Link from "next/link";
+// 1. Добавляем импорт Image
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="max-w-6xl mx-auto space-y-20 pb-24">
+    <div className="max-w-6xl mx-auto space-y-20 pb-24 p-4">
       
-      {/* 1. HERO SECTION С ИНФОГРАФИКОЙ */}
-      <section className="relative overflow-hidden bg-linear-to-br from-blue-700 to-blue-500 rounded-[3rem] p-12 text-white shadow-2xl">
-        <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-400/30 rounded-full text-sm font-medium backdrop-blur-md">
-              <CloudLightning size={16} />
+      {/* 1. HERO SECTION С ВАШИМ ФОТО */}
+      <section className="relative overflow-hidden bg-slate-900 rounded-[3rem] text-white shadow-2xl">
+        {/* Фоновое свечение (опционально для красоты) */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-600/20 blur-[120px] -z-0" />
+        
+        <div className="relative z-10 grid md:grid-cols-2 gap-0 items-stretch">
+          <div className="p-12 space-y-8 flex flex-col justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm font-medium backdrop-blur-md border border-white/10 w-fit">
+              <CloudLightning size={16} className="text-blue-400" />
               <span>Цифровое сопровождение стройки</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
               Ваш проект под защитой экспертов
             </h1>
-            <p className="text-xl text-blue-100 leading-relaxed">
+            <p className="text-xl text-slate-300 leading-relaxed">
               Комплексный инструмент для строительного бизнеса: от расчетов фин. устойчивости до получения актов ввода в эксплуатацию.
             </p>
             <div className="flex gap-4">
-              <button className="bg-white text-blue-600 px-10 py-4 rounded-2xl font-bold hover:shadow-lg transition-all">
+              <button className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold transition-all transform hover:scale-105">
                 Попробовать бесплатно
               </button>
             </div>
           </div>
 
-          {/* Визуальная инфографика в Hero */}
-          <div className="hidden md:grid grid-cols-2 gap-4">
-            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-3xl border border-white/20 transform translate-y-8">
-              <BarChart3 className="mb-4 text-blue-200" size={32} />
-              <div className="text-2xl font-bold">+25%</div>
-              <div className="text-xs text-blue-100">Шанс победы в тендере</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-3xl border border-white/20">
-              <Settings2 className="mb-4 text-blue-200" size={32} />
-              <div className="text-2xl font-bold">100%</div>
-              <div className="text-xs text-blue-100">Автоматизация ПТО</div>
-            </div>
+          {/* ВСТАВЛЯЕМ ВАШЕ ФОТО ТУТ */}
+          <div className="relative hidden md:block min-h-[500px]">
+            <Image 
+              src="/images/hero-construction.jpg" // Укажи свое название файла
+              alt="Строительная экспертиза"
+              fill
+              className="object-cover"
+              priority
+            />
+            {/* Градиентный переход от фото к тексту */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-transparent" />
           </div>
         </div>
       </section>
 
-      {/* 2. БЛОК ИНФОГРАФИКИ: "КАК ЭТО РАБОТАЕТ" */}
+      {/* 2. БЛОК ИНФОГРАФИКИ (Оставляем без изменений) */}
       <section className="space-y-12">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-slate-900">Ваш надежный помощник</h2>
@@ -54,7 +58,6 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Линия-путь (для десктопа) */}
           <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -z-10" />
           
           <StepItem 
@@ -75,54 +78,72 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. СЕТКА ОСНОВНЫХ УСЛУГ */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ServiceCard 
-          icon={<Calculator />} 
-          title="Бухгалтерия и ПФУ" 
-          desc="Расчет показателей финансовой устойчивости для тендеров."
-          href="/services/pfu-calc"
-        />
-        <ServiceCard 
-          icon={<Briefcase />} 
-          title="Закупки" 
-          desc="Сопровождение на Goszakup, Самрук-Казына и Mitwork."
-          href="/services/goszakup"
-        />
-        <ServiceCard 
-          icon={<HardHat />} 
-          title="Инженер ПТО" 
-          desc="Формы 2, 3, исполнительная документация и обучение."
-          href="/services/smetchik-course"
-        />
-        <ServiceCard 
-          icon={<Scale />} 
-          title="Юридический отдел" 
-          desc="Претензии, иски и сопровождение договоров."
-          href="/services/legal-claims"
-        />
-        <ServiceCard 
-          icon={<FileBadge />} 
-          title="Лицензирование" 
-          desc="Помощь в получении лицензий ГСЛ 1, 2, 3 категорий."
-          href="/services/license-categories"
-        />
-        <ServiceCard 
-          icon={<ShieldCheck />} 
-          title="Промбезопасность" 
-          desc="Аттестация персонала и техническое обслуживание."
-          href="/services/safety-training"
-        />
-      </section>
+      {/* 3. СЕТКА УСЛУГ С ФОТОГРАФИЯМИ */}
+      {/* 3. СЕТКА УСЛУГ С ФОТОГРАФИЯМИ */}
+    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 1. Бухгалтерия */}
+      <ServiceCard 
+        icon={<Calculator />} 
+        title="Бухгалтерия и ПФУ" 
+        desc="Расчет показателей финансовой устойчивости для тендеров."
+        href="/services/pfu-calc"
+        imgSrc="/images/accounting-bg.jpg" 
+      />
 
+      {/* 2. Закупки — заменим на ваше фото с контрактом */}
+      <ServiceCard 
+        icon={<Briefcase />} 
+        title="Закупки" 
+        desc="Сопровождение на Goszakup, Самрук-Казына и Mitwork."
+        href="/services/goszakup"
+        imgSrc="/images/closeup-hands-passing-contract-unrecognizable-businessman.jpg" 
+      />
+
+      {/* 3. Инженер ПТО */}
+      <ServiceCard 
+        icon={<HardHat />} 
+        title="Инженер ПТО" 
+        desc="Формы 2, 3, исполнительная документация и обучение."
+        href="/services/smetchik-course"
+        imgSrc="/images/engineer-bg.jpg" 
+      />
+
+      {/* 4. Юридический отдел — ваше фото с весами */}
+      <ServiceCard 
+        icon={<Scale />} 
+        title="Юридический отдел" 
+        desc="Претензии, иски и сопровождение договоров."
+        href="/services/legal-claims"
+        imgSrc="/images/scales-justice-workplace.jpg" 
+      />
+
+      {/* 5. Лицензирование — ваше фото проекта дома */}
+      <ServiceCard 
+        icon={<FileBadge />} 
+        title="Лицензирование" 
+        desc="Помощь в получении лицензий ГСЛ 1, 2, 3 категорий."
+        href="/services/license-categories"
+        imgSrc="/images/working-housing-project.jpg" 
+      />
+
+      {/* 6. Промбезопасность — фото со стройкой (hero) */}
+      <ServiceCard 
+        icon={<ShieldCheck />} 
+        title="Промбезопасность" 
+        desc="Аттестация персонала и техническое обслуживание."
+        href="/services/safety-training"
+        imgSrc="/images/hero-construction.jpg" 
+      />
+    </section>
+    
     </div>
   );
 }
 
-// Вспомогательный компонент для шагов
-function StepItem({ icon, title, desc }: { icon: any, title: string, desc: string }) {
+// Вспомогательные компоненты (остаются такими же)
+function StepItem({ icon, title, desc }: any) {
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 text-center space-y-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 text-center space-y-4 shadow-sm">
       <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-100">
         {icon}
       </div>
@@ -132,17 +153,44 @@ function StepItem({ icon, title, desc }: { icon: any, title: string, desc: strin
   );
 }
 
-// Вспомогательный компонент для карточек услуг
-function ServiceCard({ icon, title, desc, href }: { icon: any, title: string, desc: string, href: string }) {
+function ServiceCard({ icon, title, desc, href, imgSrc }: any) {
   return (
-    <Link href={href} className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-50 transition-all">
-      <div className="text-blue-600 mb-6 group-hover:scale-110 transition-transform duration-300">
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>
-      <p className="text-slate-500 text-sm leading-relaxed mb-6">{desc}</p>
-      <div className="flex items-center text-blue-600 font-bold text-sm gap-2">
-        Перейти <ArrowRight size={16} />
+    <Link 
+      href={href} 
+      className="group relative min-h-[320px] flex flex-col justify-end overflow-hidden rounded-[2.5rem] border border-slate-100 shadow-md transition-all hover:shadow-2xl bg-white"
+    >
+      {/* Добавляем само изображение на задний план */}
+      {imgSrc && (
+        <>
+          <Image 
+            src={imgSrc} 
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          {/* Затемнение, чтобы белый текст читался на фоне фото */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
+        </>
+      )}
+
+      {/* Контент карточки */}
+      <div className="relative z-20 p-8 space-y-3">
+        {/* Иконка: синяя на белом фоне или белая на фото */}
+        <div className={`${imgSrc ? 'text-white' : 'text-blue-600'} mb-2`}>
+          {icon}
+        </div>
+        
+        <h3 className={`text-xl font-bold ${imgSrc ? 'text-white' : 'text-slate-900'}`}>
+          {title}
+        </h3>
+        
+        <p className={`text-sm leading-relaxed ${imgSrc ? 'text-slate-200' : 'text-slate-500'}`}>
+          {desc}
+        </p>
+        
+        <div className={`flex items-center font-bold text-sm gap-2 pt-2 ${imgSrc ? 'text-blue-300' : 'text-blue-600'}`}>
+          Перейти <ArrowRight size={16} />
+        </div>
       </div>
     </Link>
   );
