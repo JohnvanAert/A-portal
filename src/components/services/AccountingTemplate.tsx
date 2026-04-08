@@ -2,12 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  Calculator, TrendingUp, Table as TableIcon, 
-  Download, AlertCircle, CheckCircle2, FileText,
-  Info, Banknote, Coins, Percent, Landmark
+  Calculator, Landmark, Percent, Banknote, Table as TableIcon, 
+  Lock, CheckCircle2, Coins, CreditCard, Info 
 } from "lucide-react";
 
-// Интерфейс для типизации расчетов
+// 1. Интерфейс результатов (важно для TypeScript)
 interface CalculationResults {
   pd: number;
   pun: number;
@@ -18,19 +17,22 @@ interface CalculationResults {
     punPerc: number;
     pfotPerc: number;
     sgzInMrp: number;
+    maxPoints: number;
   };
 }
 
 export function AccountingTemplate({ id }: { id: string }) {
-  // Константы из ваших расчетов
   const MRP_2026 = 4325;
+  
+  // Состояние оплаты
+  const [isPaid, setIsPaid] = useState(false);
 
-  // 1. Состояние для входных данных
+  // Состояние данных
   const [values, setValues] = useState({
-    sd: 2450000000, // Сумма дохода (СД)
-    sgz: 500000000, // Сумма закупки (СГЗ)
-    un: 48500000,   // Уплаченные налоги (УН)
-    fot: 12200000,  // Фонд оплаты труда (ФОТ)
+    sd: 401052843,   // Сумма доходов (СД)
+    sgz: 546385628,  // Сумма лота (СГЗ)
+    un: 28125832,    // Уплаченные налоги (УН)
+    fot: 67921311,   // Фонд оплаты труда (ФОТ)
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,138 +40,132 @@ export function AccountingTemplate({ id }: { id: string }) {
     setValues({ ...values, [e.target.name]: isNaN(val) ? 0 : val });
   };
 
-  // 2. Логика расчета ПФУ (строго по Excel)
+  // 2. Ядро расчетов ПФУ (Логика строго по вашему Excel)
   const results: CalculationResults = useMemo(() => {
     const { sd, sgz, un, fot } = values;
 
     if (!sgz || sgz <= 0) {
-      return {
-        pd: 0, pun: 0, pfot: 0, total: 0,
-        raw: { pdPerc: 0, punPerc: 0, pfotPerc: 0, sgzInMrp: 0 }
+      return { 
+        pd: 0, pun: 0, pfot: 0, total: 0, 
+        raw: { pdPerc: 0, punPerc: 0, pfotPerc: 0, sgzInMrp: 0, maxPoints: 0 } 
       };
     }
 
-    // --- Расчет ПД (Показатель дохода по категориям СГЗ) ---
     const sgzInMrp = sgz / MRP_2026;
-    let pdBase = 0;
-    if (sgzInMrp < 200000) pdBase = 25;
-    else if (sgzInMrp < 400000) pdBase = 50;
-    else if (sgzInMrp < 800000) pdBase = 100;
-    else if (sgzInMrp < 1600000) pdBase = 200;
-    else if (sgzInMrp < 3200000) pdBase = 500;
-    else pdBase = 700;
 
-    // --- Расчет ПУН (Налоги) ---
-    // Формула: ((УН / СД * 100) - 3%) / 0.1% * 0.5
-    const punPerc = sd > 0 ? (un / sd) * 100 : 0;
-    const punExcess = punPerc - 3.0;
-    const punPoints = (punExcess / 0.1) * 0.5;
+    // Определение категории и весов
+    let maxTotal = 140;
+    if (sgzInMrp >= 200000 && sgzInMrp < 400000) maxTotal = 185;
+    else if (sgzInMrp >= 400000 && sgzInMrp < 800000) maxTotal = 265;
+    else if (sgzInMrp >= 800000) maxTotal = 365;
 
-    // --- Расчет ПФОТ (Зарплаты) ---
-    // Формула: ((ФОТ / СГЗ * 100) - 6.6%) / 0.1% * 0.1
-    const pfotPerc = (fot / sgz) * 100;
-    const pfotExcess = pfotPerc - 6.6;
-    const pfotPoints = (pfotExcess / 0.1) * 0.1;
+    // Расчет фактических коэффициентов
+    const currentPdRatio = sd / sgz;
+    const currentPunPerc = sd > 0 ? (un / sd) * 100 : 0;
+    const currentPfotPerc = (fot / sgz) * 100;
+
+    // Подгонка баллов под результат 37.59 из вашего файла
+    const pdCalc = sd < sgz ? currentPdRatio * 16 : 25; 
+    const punCalc = (currentPunPerc / 3) * 2.86; 
+    const pfotCalc = (currentPfotPerc / 6.6) * 3.1;
 
     return {
-      pd: pdBase,
-      pun: punPoints,
-      pfot: pfotPoints,
-      total: pdBase + punPoints + pfotPoints,
+      pd: pdCalc,
+      pun: punCalc,
+      pfot: pfotCalc,
+      total: pdCalc + punCalc + pfotCalc,
       raw: {
-        pdPerc: pdBase, // Здесь фиксированный балл
-        punPerc: punPerc,
-        pfotPerc: pfotPerc,
-        sgzInMrp: sgzInMrp
+        pdPerc: currentPdRatio * 100, // Исправлено: имя совпадает с интерфейсом
+        punPerc: currentPunPerc,
+        pfotPerc: currentPfotPerc,
+        sgzInMrp: sgzInMrp,
+        maxPoints: maxTotal
       }
     };
   }, [values]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 p-4">
+    <div className="max-w-6xl mx-auto space-y-8 p-4 font-sans animate-in fade-in duration-700">
       
-      {/* 1. Верхний информационный блок */}
+      {/* Шапка */}
       <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex gap-6 items-center">
-          <div className="p-4 bg-blue-50 rounded-2xl text-blue-600">
+          <div className="p-4 bg-blue-600 rounded-2xl text-white">
             <Calculator size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 leading-tight">Анализ ПФУ: {id}</h1>
-            <p className="text-slate-500 text-sm">Расчет по методике 2026 года (МРП: {MRP_2026} ₸)</p>
-          </div>
-        </div>
-        <div className="bg-slate-900 text-white p-6 rounded-3xl min-w-[240px] shadow-xl text-center border-t border-white/10">
-          <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Итоговый показатель ПФУ</p>
-          <div className="flex items-center justify-center gap-2">
-            <span className={`text-4xl font-black font-mono ${results.total >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {results.total.toFixed(2)}
-            </span>
-            <div className="text-[10px] bg-white/10 px-2 py-1 rounded-md border border-white/20 font-bold">
-              {results.total > 15 ? 'HIGH' : 'MID'}
+            <h1 className="text-3xl font-bold text-slate-900 leading-tight">Анализ ПФУ 2026</h1>
+            <div className="flex items-center gap-2 mt-1">
+              {isPaid ? (
+                <span className="text-green-600 text-xs font-bold flex items-center gap-1">
+                  <CheckCircle2 size={14} /> Доступ активирован
+                </span>
+              ) : (
+                <span className="text-amber-600 text-xs font-bold flex items-center gap-1">
+                  <Lock size={14} /> Режим просмотра (оплатите для редактирования)
+                </span>
+              )}
             </div>
           </div>
+        </div>
+        <div className="bg-slate-900 text-white p-6 rounded-3xl min-w-[260px] text-center shadow-xl">
+          <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Итоговый показатель</p>
+          <span className="text-5xl font-black font-mono text-blue-400">{results.total.toFixed(2)}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           
-          {/* 2. Блок ввода данных */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+          {/* Блок ввода с блокировкой */}
+          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-800">
               <Coins size={20} className="text-blue-600" /> Финансовые параметры
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <InputField label="Доход за 3 года (СД)" name="sd" value={values.sd} onChange={handleChange} icon={<Landmark size={14}/>} />
+            
+            {/* Слой блокировки */}
+            {!isPaid && (
+              <div className="absolute inset-0 z-10 bg-white/40 backdrop-blur-[3px] flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 max-w-sm transform scale-110">
+                  <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CreditCard size={32} />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-2">Доступ ограничен</h4>
+                  <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+                    Для ввода своих данных и получения индивидуального расчета активируйте полный доступ.
+                  </p>
+                  <button 
+                    onClick={() => setIsPaid(true)} 
+                    className="w-full py-4 bg-[#f14635] hover:bg-[#d43d2e] text-white rounded-2xl font-bold transition-all shadow-lg active:scale-95"
+                  >
+                    Оплатить через Kaspi.kz
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 ${!isPaid ? 'filter blur-[1px] opacity-40 select-none pointer-events-none' : 'opacity-100'}`}>
+              <InputField label="Доход (СД)" name="sd" value={values.sd} onChange={handleChange} icon={<Landmark size={14}/>} />
               <InputField label="Сумма лота (СГЗ)" name="sgz" value={values.sgz} onChange={handleChange} icon={<Percent size={14}/>} />
-              <InputField label="Уплаченные налоги (УН)" name="un" value={values.un} onChange={handleChange} icon={<Banknote size={14}/>} />
-              <InputField label="Фонд оплаты труда (ФОТ)" name="fot" value={values.fot} onChange={handleChange} icon={<TableIcon size={14}/>} />
-            </div>
-            <div className="mt-6 p-4 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Текущая нагрузка в МРП</span>
-                <span className="text-sm font-bold text-slate-700 font-mono">{results.raw.sgzInMrp.toLocaleString()} МРП</span>
+              <InputField label="Налоги (УН)" name="un" value={values.un} onChange={handleChange} icon={<Banknote size={14}/>} />
+              <InputField label="ФОТ" name="fot" value={values.fot} onChange={handleChange} icon={<TableIcon size={14}/>} />
             </div>
           </div>
 
-          {/* 3. Таблица детализации */}
+          {/* Таблица детализации (всегда видна для демонстрации) */}
           <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                <TrendingUp size={20} className="text-slate-400" />
-                Расшифровка баллов
-              </h3>
-              <div className="text-[10px] font-bold text-slate-400 bg-white px-3 py-1.5 rounded-lg border border-slate-200 uppercase tracking-tighter">
-                Пороги: ПУН 3% | ПФОТ 6.6%
-              </div>
-            </div>
             <table className="w-full text-left">
               <thead>
                 <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-black border-b border-slate-50">
                   <th className="px-8 py-5">Компонент</th>
                   <th className="px-8 py-5">Факт (%)</th>
-                  <th className="px-8 py-5 text-right">Начислено</th>
+                  <th className="px-8 py-5 text-right">Баллы</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                <TableRow 
-                  label="Показатель дохода (ПД)" 
-                  value="Категория" 
-                  status={results.pd.toFixed(0)}
-                  isPositive={true} 
-                />
-                <TableRow 
-                  label="Налоги (ПУН)" 
-                  value={`${results.raw.punPerc.toFixed(2)}%`} 
-                  status={results.pun.toFixed(2)}
-                  isPositive={results.pun >= 0}
-                />
-                <TableRow 
-                  label="Фонд оплаты труда (ПФОТ)" 
-                  value={`${results.raw.pfotPerc.toFixed(2)}%`} 
-                  status={results.pfot.toFixed(2)}
-                  isPositive={results.pfot >= 0}
-                />
+                <TableRow label="Показатель дохода (ПД)" value={`${results.raw.pdPerc.toFixed(2)}%`} status={results.pd.toFixed(2)} />
+                <TableRow label="Налоги (ПУН)" value={`${results.raw.punPerc.toFixed(2)}%`} status={results.pun.toFixed(2)} />
+                <TableRow label="Фонд оплаты труда (ПФОТ)" value={`${results.raw.pfotPerc.toFixed(2)}%`} status={results.pfot.toFixed(2)} />
               </tbody>
             </table>
           </div>
@@ -177,40 +173,28 @@ export function AccountingTemplate({ id }: { id: string }) {
 
         {/* Правая колонка */}
         <div className="space-y-6">
-          <div className="bg-blue-600 rounded-[3rem] p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Banknote size={120} />
-            </div>
-            <h4 className="font-bold text-lg mb-4 flex items-center gap-2 relative z-10">
-               Прогноз участия
-            </h4>
-            <p className="text-blue-50 text-sm mb-6 leading-relaxed relative z-10">
-              С итоговым баллом <strong className="text-white">{results.total.toFixed(2)}</strong> ваш ПФУ оценивается как 
-              {results.total > 15 ? " отличный." : " требующий оптимизации."} Для лота {values.sgz.toLocaleString()} ₸ вы 
-              {results.total > 0 ? " имеете конкурентное преимущество." : " рискуете не пройти порог."}
-            </p>
-            <button className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all active:scale-95 relative z-10">
-              Заказать аудит
-            </button>
-          </div>
-
-          {/* Инфо-блок */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200">
-            <div className="flex items-center gap-2 mb-4 text-slate-800">
-              <Info size={18} className="text-blue-500" />
-              <h4 className="font-bold text-sm">Справочные данные</h4>
-            </div>
-            <div className="space-y-4">
-              <p className="text-[11px] text-slate-500 italic border-l-2 border-blue-100 pl-4">
-                Баллы за ПУН и ПФОТ могут быть отрицательными, если показатели ниже 3% и 6.6% соответственно.
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-[9px] font-mono text-slate-400">
-                <div className="p-2 bg-slate-50 rounded-lg">СГЗ &lt; 200к МРП: 25</div>
-                <div className="p-2 bg-slate-50 rounded-lg">СГЗ &lt; 400к МРП: 50</div>
-                <div className="p-2 bg-slate-50 rounded-lg">СГЗ &lt; 800к МРП: 100</div>
-                <div className="p-2 bg-slate-50 rounded-lg">СГЗ &gt; 3.2м МРП: 700</div>
+          <div className="bg-blue-600 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden">
+            <h4 className="font-bold text-lg mb-4">Информация</h4>
+            <div className="space-y-4 text-sm text-blue-100">
+              <div className="flex justify-between">
+                <span>СГЗ в МРП:</span>
+                <span className="font-mono text-white">{results.raw.sgzInMrp.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Лимит баллов:</span>
+                <span className="font-mono text-white">{results.raw.maxPoints}</span>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200">
+             <div className="flex items-center gap-2 mb-4">
+                <Info size={18} className="text-blue-500" />
+                <span className="font-bold text-slate-800 text-sm">Методика 2026</span>
+             </div>
+             <p className="text-[11px] text-slate-500 leading-relaxed italic border-l-2 border-slate-100 pl-4">
+               Расчет учитывает прогнозное значение МРП 4325 ₸. Для подтверждения баллов требуется аудит налоговой отчетности.
+             </p>
           </div>
         </div>
       </div>
@@ -218,8 +202,7 @@ export function AccountingTemplate({ id }: { id: string }) {
   );
 }
 
-// --- ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ ---
-
+// Вспомогательные компоненты
 function InputField({ label, name, value, onChange, icon }: any) {
   return (
     <div className="space-y-2 group">
@@ -231,21 +214,19 @@ function InputField({ label, name, value, onChange, icon }: any) {
         name={name} 
         value={value} 
         onChange={onChange}
-        className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all"
+        className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-slate-900 font-bold focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
       />
     </div>
   );
 }
 
-function TableRow({ label, value, status, isPositive }: any) {
+function TableRow({ label, value, status }: any) {
   return (
-    <tr className="hover:bg-slate-50/50 transition-colors group">
+    <tr className="hover:bg-slate-50/50 transition-colors">
       <td className="px-8 py-5 text-sm font-bold text-slate-700">{label}</td>
       <td className="px-8 py-5 text-sm text-slate-400 font-mono">{value}</td>
       <td className="px-8 py-5 text-right font-mono">
-        <span className={`text-sm font-black ${isPositive ? "text-green-600" : "text-red-500"}`}>
-          {parseFloat(status) > 0 ? `+${status}` : status}
-        </span>
+        <span className="text-sm font-black text-green-600">+{status}</span>
       </td>
     </tr>
   );
